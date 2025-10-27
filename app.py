@@ -25,12 +25,6 @@ AUTHOR_PROFILES_FILE = "author_profiles.json"
 TOP_K = 5
 BACKUP_PER_AUTHOR = 2
 
-GROUND_TRUTH = {
-    "2022-Deep_Architectures_for_Image_Compression_A_Critical_Review.pdf": ["Dipthi Mishra"],
-    "mBERT based model for identification.pdf": ["Arun Chauhan"],
-    "1299-1309.pdf": ["Om Prakash Patel", "Aruna Tiwari"],
-}
-
 # ==========================================
 # Helper Functions
 # ==========================================
@@ -41,22 +35,6 @@ def extract_text_from_pdf(pdf_file):
 
 def preprocess(text):
     return re.findall(r'\b\w+\b', text.lower())
-
-# ==========================================
-# Evaluation Functions
-# ==========================================
-def top_k_accuracy(preds, gt_authors, k=TOP_K):
-    return any(author in gt_authors for author in preds[:k])
-
-def precision_at_k(preds, gt_authors, k=TOP_K):
-    correct = sum(1 for a in preds[:k] if a in gt_authors)
-    return correct / k
-
-def mean_reciprocal_rank(preds, gt_authors):
-    for rank, author in enumerate(preds, start=1):
-        if author in gt_authors:
-            return 1 / rank
-    return 0
 
 # ==========================================
 # Streamlit Page Setup
@@ -106,10 +84,6 @@ st.markdown(
         font-size: 0.9rem;
         color: #666;
     }
-    .metric-table th {
-        background-color: #f0f0f0;
-        font-weight: bold;
-    }
     </style>
     """,
     unsafe_allow_html=True
@@ -126,7 +100,6 @@ with st.spinner("Loading author profiles and models..."):
         with open(AUTHOR_PROFILES_FILE, "r", encoding="utf-8") as f:
             author_texts = json.load(f)
     else:
-        # Automatically detect split parts: author_profiles_part1.json, part2.json, etc.
         part_idx = 1
         while True:
             part_file = f"author_profiles_part{part_idx}.json"
@@ -146,7 +119,6 @@ with st.spinner("Loading author profiles and models..."):
     author_embeddings = np.load(EMBEDDINGS_FILE)
     author_embeddings = np.array([normalize(e.reshape(1, -1))[0] for e in author_embeddings])
     reviewer_sim_matrix = cosine_similarity(author_embeddings)
-
 
 # ==========================================
 # Load Models
@@ -223,8 +195,7 @@ tabs = st.tabs([
     "Doc2Vec",
     "Jaccard",
     "Topic Modeling",
-    "Comparison",
-    "Evaluation Metrics"
+    "Comparison"
 ])
 
 if uploaded_file:
@@ -291,33 +262,5 @@ if uploaded_file:
         })
         st.dataframe(df, use_container_width=True)
         st.caption("Comparison of top reviewers identified by each model.")
-
-    # Evaluation Metrics
-    with tabs[5]:
-        file_name = uploaded_file.name
-        if file_name in GROUND_TRUTH:
-            gt_authors = GROUND_TRUTH[file_name]
-            methods = {
-                "BERT": [r["author"] for r in bert_results],
-                "Doc2Vec": [a for a, _ in doc2vec_results],
-                "Jaccard": [a for a, _ in jaccard_results],
-                "TopicModel": [a for a, _ in topic_results],
-            }
-
-            metrics = {
-                name: {
-                    "Top-5 Accuracy": top_k_accuracy(preds, gt_authors, k=TOP_K),
-                    "Precision@5": precision_at_k(preds, gt_authors, k=TOP_K),
-                    "MRR": mean_reciprocal_rank(preds, gt_authors),
-                }
-                for name, preds in methods.items()
-            }
-
-            df_metrics = pd.DataFrame(metrics).T
-            st.dataframe(df_metrics.style.highlight_max(axis=0), use_container_width=True)
-            st.success("Evaluation complete.")
-        else:
-            st.info("No ground truth available for this paper. Evaluation skipped.")
 else:
     st.info("Upload a PDF to start reviewer recommendation.")
-
