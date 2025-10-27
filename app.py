@@ -7,6 +7,7 @@ import fitz
 import numpy as np
 import json
 import re
+import os
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import normalize
@@ -319,3 +320,4 @@ if uploaded_file:
             st.info("No ground truth available for this paper. Evaluation skipped.")
 else:
     st.info("Upload a PDF to start reviewer recommendation.")
+
