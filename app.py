@@ -118,13 +118,34 @@ st.markdown(
 # Load Data
 # ==========================================
 with st.spinner("Loading author profiles and models..."):
-    with open(AUTHOR_PROFILES_FILE, "r", encoding="utf-8") as f:
-        author_texts = json.load(f)
+    author_texts = {}
+
+    # --- Load single file or multiple parts ---
+    if os.path.exists(AUTHOR_PROFILES_FILE):
+        with open(AUTHOR_PROFILES_FILE, "r", encoding="utf-8") as f:
+            author_texts = json.load(f)
+    else:
+        # Automatically detect split parts: author_profiles_part1.json, part2.json, etc.
+        part_idx = 1
+        while True:
+            part_file = f"author_profiles_part{part_idx}.json"
+            if os.path.exists(part_file):
+                with open(part_file, "r", encoding="utf-8") as f:
+                    part_data = json.load(f)
+                    author_texts.update(part_data)
+                part_idx += 1
+            else:
+                break
+
+    if not author_texts:
+        st.error("No author profile files found. Please include 'author_profiles.json' or its split parts.")
+        st.stop()
 
     author_names = np.load(AUTHOR_NAMES_FILE, allow_pickle=True)
     author_embeddings = np.load(EMBEDDINGS_FILE)
     author_embeddings = np.array([normalize(e.reshape(1, -1))[0] for e in author_embeddings])
     reviewer_sim_matrix = cosine_similarity(author_embeddings)
+
 
 # ==========================================
 # Load Models
