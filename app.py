@@ -1,5 +1,5 @@
 # ==========================================
-# Cross-Document Reviewer Recommendation App (Light Theme, No Emojis)
+# Cross-Document Reviewer Recommendation App (Light Theme, Green Style)
 # ==========================================
 
 import streamlit as st
@@ -41,7 +41,6 @@ def preprocess(text):
 # ==========================================
 st.set_page_config(
     page_title="Reviewer Recommendation System",
-    page_icon="📘",
     layout="wide",
 )
 
@@ -75,14 +74,10 @@ st.markdown(
         background-color: #f9f9f9;
         transition: 0.3s;
     }
-    .score {
+    .green-text {
         color: #0b6e4f;
         font-weight: 600;
         font-size: 0.95rem;
-    }
-    .backup {
-        font-size: 0.9rem;
-        color: #666;
     }
     </style>
     """,
@@ -95,7 +90,7 @@ st.markdown(
 with st.spinner("Loading author profiles and models..."):
     author_texts = {}
 
-    # --- Load single file or multiple parts ---
+    # Load single or multiple parts
     if os.path.exists(AUTHOR_PROFILES_FILE):
         with open(AUTHOR_PROFILES_FILE, "r", encoding="utf-8") as f:
             author_texts = json.load(f)
@@ -216,9 +211,9 @@ if uploaded_file:
             st.markdown(
                 f"""
                 <div class="recommend-card">
-                    <strong>{rank}. {rec['author']}</strong><br>
-                    <span class="score">Similarity: {rec['score']:.4f}</span><br>
-                    <span class="backup">Backup Reviewers: {', '.join(rec['backups'])}</span>
+                    <strong class="green-text">{rank}. {rec['author']}</strong><br>
+                    <span class="green-text">Similarity: {rec['score']:.4f}</span><br>
+                    <span class="green-text">Backup Reviewers: {', '.join(rec['backups'])}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -229,7 +224,7 @@ if uploaded_file:
         st.subheader("Doc2Vec Recommendations")
         for rank, (author, score) in enumerate(doc2vec_results, start=1):
             st.markdown(
-                f"<div class='recommend-card'><strong>{rank}. {author}</strong><br><span class='score'>Similarity: {score:.4f}</span></div>",
+                f"<div class='recommend-card'><strong class='green-text'>{rank}. {author}</strong><br><span class='green-text'>Similarity: {score:.4f}</span></div>",
                 unsafe_allow_html=True,
             )
 
@@ -238,7 +233,7 @@ if uploaded_file:
         st.subheader("Jaccard Similarity Recommendations")
         for rank, (author, score) in enumerate(jaccard_results, start=1):
             st.markdown(
-                f"<div class='recommend-card'><strong>{rank}. {author}</strong><br><span class='score'>Score: {score:.4f}</span></div>",
+                f"<div class='recommend-card'><strong class='green-text'>{rank}. {author}</strong><br><span class='green-text'>Score: {score:.4f}</span></div>",
                 unsafe_allow_html=True,
             )
 
@@ -247,7 +242,7 @@ if uploaded_file:
         st.subheader("Topic Modeling (NMF) Recommendations")
         for rank, (author, score) in enumerate(topic_results, start=1):
             st.markdown(
-                f"<div class='recommend-card'><strong>{rank}. {author}</strong><br><span class='score'>Score: {score:.4f}</span></div>",
+                f"<div class='recommend-card'><strong class='green-text'>{rank}. {author}</strong><br><span class='green-text'>Score: {score:.4f}</span></div>",
                 unsafe_allow_html=True,
             )
 
@@ -260,7 +255,13 @@ if uploaded_file:
             "Jaccard": [a for a, _ in jaccard_results],
             "TopicModel": [a for a, _ in topic_results],
         })
-        st.dataframe(df, use_container_width=True)
+
+        styled_df = df.style.set_properties(**{
+            'color': '#0b6e4f',
+            'font-weight': '600'
+        })
+
+        st.dataframe(styled_df, use_container_width=True)
         st.caption("Comparison of top reviewers identified by each model.")
 else:
     st.info("Upload a PDF to start reviewer recommendation.")
